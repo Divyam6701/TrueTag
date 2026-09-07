@@ -1,0 +1,73 @@
+// ---------------------------------------------------------------------
+// Backend data model for ScanVerify.
+// ---------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  isGuest      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  scans        Scan[]
+}
+
+model Scan {
+  id              String          @id @default(cuid())
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  imageUrl        String
+  detectedProduct String
+  overallStatus   Verdict
+  confidence      Int
+  createdAt       DateTime        @default(now())
+  result          ScanResult?
+  checklistItems  ChecklistItem[]
+  report          Report?
+
+  @@index([userId])
+}
+
+model ScanResult {
+  id             String   @id @default(cuid())
+  scan           Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  scanId         String   @unique
+  correctItems   String[]
+  incorrectItems String[]
+  warnings       String[]
+}
+
+model ChecklistItem {
+  id         String   @id @default(cuid())
+  scan       Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  scanId     String
+  label      String
+  detail     String
+  status     Verdict
+  confidence Int
+
+  @@index([scanId])
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  scan      Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  scanId    String   @unique
+  pdfUrl    String
+  createdAt DateTime @default(now())
+}
+
+enum Verdict {
+  correct
+  issue
+  warn
+}
