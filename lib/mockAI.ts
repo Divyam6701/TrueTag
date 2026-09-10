@@ -1,173 +1,127 @@
 import { nanoid } from "nanoid";
 import type { ChecklistItem, ScanResult, Verdict } from "./types";
 
-/**
- * MOCK AI ANALYSIS SERVICE
- * -------------------------------------------------------------
- * This module stands in for a real computer-vision / OCR / vision-LLM
- * pipeline (e.g. a custom CV model, Gemini Vision, GPT-4o vision, or an
- * OCR service). It is intentionally isolated behind a single function,
- * `analyzeProduct`, so the rest of the app never depends on how the
- * analysis is actually produced.
- *
- * TO CONNECT A REAL MODEL:
- * Replace the body of `analyzeProduct` with a call to your inference
- * endpoint (ideally from a server route, e.g. POST /api/scan), keeping
- * the same input/output shape (`ScanResult`). Nothing in the UI needs
- * to change.
- */
+const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 
-// Simple deterministic hash so the same uploaded image always produces
-// the same mock result (useful for demos and predictable QA).
-function hashString(input: string): number {
-  let hash = 0;
-  for (let i = 0; i < input.length; i += 1) {
-    hash = (hash << 5) - hash + input.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-const PRODUCT_NAMES = [
-  "Packaged Snack Product",
-  "Bottled Beverage",
-  "Cosmetic Container",
-  "Household Cleaning Product",
-  "Over-the-Counter Supplement",
-  "Electronics Accessory Packaging",
-];
-
-const CHECKLIST_TEMPLATE: Array<{
+// Maps each extracted field to a human-readable checklist label,
+// and what to say when it's present vs. missing.
+const FIELD_DEFINITIONS: Array<{
+  key: string;
   label: string;
-  detail: { correct: string; issue: string; warn: string };
-  weight: number; // likelihood of being flagged, 0-1 (higher = more likely correct)
+  correctDetail: string;
+  issueDetail: string;
 }> = [
-  {
-    label: "Product name detected",
-    detail: {
-      correct: "A clear, legible product name was located on the primary label.",
-      issue: "No readable product name could be located on the packaging.",
-      warn: "A product name was found but partially obscured by glare or folds.",
-    },
-    weight: 0.85,
-  },
-  {
-    label: "Required information present",
-    detail: {
-      correct: "Mandatory disclosure fields (net weight, manufacturer, origin) were all found.",
-      issue: "One or more mandatory disclosure fields could not be located.",
-      warn: "Most required fields were found; one field needs manual confirmation.",
-    },
-    weight: 0.7,
-  },
-  {
-    label: "Label readability",
-    detail: {
-      correct: "Text contrast and resolution were sufficient for reliable OCR extraction.",
-      issue: "Text was too low-resolution or low-contrast to extract reliably.",
-      warn: "Some text was readable only after enhancement; confidence is reduced.",
-    },
-    weight: 0.75,
-  },
-  {
-    label: "Packaging integrity",
-    detail: {
-      correct: "No visible damage, tampering, or seal issues were detected.",
-      issue: "Visible damage or a broken seal was detected on the packaging.",
-      warn: "Minor cosmetic wear was detected; unlikely to affect product integrity.",
-    },
-    weight: 0.8,
-  },
-  {
-    label: "Ingredient / material listing",
-    detail: {
-      correct: "The ingredient or material listing was detected and matches expected format.",
-      issue: "No ingredient or material listing was detected on visible surfaces.",
-      warn: "A listing was found but was incomplete or cropped out of frame.",
-    },
-    weight: 0.65,
-  },
-  {
-    label: "Authenticity markers",
-    detail: {
-      correct: "Expected authenticity markers (hologram, batch code, or seal) were verified.",
-      issue: "Expected authenticity markers were not found where anticipated.",
-      warn: "An authenticity marker was found but could not be fully verified from this angle.",
-    },
-    weight: 0.6,
-  },
-  {
-    label: "Expiry / batch code visibility",
-    detail: {
-      correct: "A batch code or expiry date was located and appears well-formed.",
-      issue: "No batch code or expiry date could be located in the image.",
-      warn: "A code was found but partially cropped; recommend rescanning that area.",
-    },
-    weight: 0.55,
-  },
+  { key: "commodity_name", label: "Product identity", correctDetail: "Product name/identity is clearly declared.", issueDetail: "Product name/identity could not be found." },
+  { key: "manufacturer_details", label: "Manufacturer details", correctDetail: "Manufacturer/packer/importer name and address found.", issueDetail: "Manufacturer/packer/importer details are missing." },
+  { key: "net_quantity", label: "Net quantity", correctDetail: "Net quantity is declared in a standard unit.", issueDetail: "Net quantity declaration is missing or non-standard." },
+  { key: "mfg_date", label: "Manufacturing date", correctDetail: "Month and year of manufacture/packing found.", issueDetail: "Manufacturing/packing date is missing." },
+  { key: "expiry_info", label: "Expiry / best-before", correctDetail: "Expiry date or best-before duration found.", issueDetail: "Expiry/best-before declaration is missing or unclear." },
+  { key: "mrp", label: "MRP declaration", correctDetail: "MRP is declared, inclusive of all taxes.", issueDetail: "MRP is missing or doesn't state 'inclusive of all taxes'." },
+  { key: "unit_sale_price", label: "Unit sale price", correctDetail: "Per-unit price breakdown is declared.", issueDetail: "Unit sale price declaration is missing." },
+  { key: "consumer_care", label: "Consumer care details", correctDetail: "Consumer care contact (phone/email) found.", issueDetail: "Consumer care details are missing." },
 ];
 
-function pickVerdict(rand: number, weight: number): Verdict {
-  if (rand < weight) return "correct";
-  if (rand < weight + (1 - weight) * 0.6) return "warn";
-  return "issue";
-}
+export async function analyzeProduct(input: string | Buffer): Promise<ScanResult> {
+  const buffer = typeof input === "string" ? Buffer.from(input) : input;
 
-export async function analyzeProduct(seedInput: string | Buffer): Promise<ScanResult> {
-  // Simulate network + inference latency for a believable pipeline feel.
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  const formData = new FormData();
+  formData.append("file", new Blob([buffer]), "scan.jpg");
 
-  const seedSource =
-    typeof seedInput === "string"
-      ? seedInput.slice(0, 5000) + seedInput.length
-      : seedInput.subarray(0, 5000).toString("base64") + seedInput.length;
+  const response = await fetch(`${BACKEND_URL}/api/scan`, {
+    method: "POST",
+    body: formData,
+  });
 
-  const seed = hashString(seedSource);
-  const rand = (i: number) => {
-    const x = Math.sin(seed + i * 999) * 10000;
-    return x - Math.floor(x);
-  };
+  if (!response.ok) {
+    throw new Error(`Backend scan failed: ${response.status}`);
+  }
 
-  const product = PRODUCT_NAMES[seed % PRODUCT_NAMES.length];
+  const result = await response.json();
+  // result shape: { id, filename, status, violations: string[], data: {...extracted fields} }
 
-  const checklist: ChecklistItem[] = CHECKLIST_TEMPLATE.map((item, i) => {
-    const r = rand(i);
-    const status = pickVerdict(r, item.weight);
-    const confidence = Math.round(
-      status === "correct"
-        ? 88 + rand(i + 50) * 11
-        : status === "warn"
-        ? 55 + rand(i + 50) * 25
-        : 20 + rand(i + 50) * 30
-    );
+  const extracted = result.data || {};
+  const violationMessages: string[] = result.violations || [];
+
+  // Build checklist from the extracted field data (found/not found per field)
+  const checklist: ChecklistItem[] = FIELD_DEFINITIONS.map((def, i) => {
+    // country of origin only applies if imported — skip entirely if not
+    const found = extracted[def.key]?.found === true;
+    const status: Verdict = found ? "correct" : "issue";
     return {
       id: nanoid(8),
-      label: item.label,
-      detail: item.detail[status],
+      label: def.label,
+      detail: found ? def.correctDetail : def.issueDetail,
       status,
-      confidence,
+      confidence: found ? 90 : 40,
     };
+  });
+
+  // Readability / font-size check (Rule 7)
+  const readability = extracted.readability || {};
+  const isReadabilityIssue = readability.overall_legibility === "illegible" || readability.mrp_text_relative_size === "small";
+  const isReadabilityWarning = readability.overall_legibility === "reduced";
+  const readabilityStatus: Verdict = isReadabilityIssue ? "issue" : isReadabilityWarning ? "warn" : "correct";
+
+  checklist.push({
+    id: nanoid(8),
+    label: "Font size / readability",
+    detail:
+      readabilityStatus === "correct"
+        ? "Declarations appear clearly legible and appropriately sized per Rule 7."
+        : readabilityStatus === "warn"
+        ? `Legibility is reduced and should be reviewed. ${readability.notes || ""}`.trim()
+        : `Font size or legibility does not appear to meet Rule 7 requirements. ${readability.notes || ""}`.trim(),
+    status: readabilityStatus,
+    confidence: readabilityStatus === "correct" ? 85 : readabilityStatus === "warn" ? 55 : 35,
+  });
+
+  // Add country of origin only if the product is imported
+  if (extracted.is_imported) {
+    const found = extracted.country_of_origin?.found === true;
+    checklist.push({
+      id: nanoid(8),
+      label: "Country of origin",
+      detail: found ? "Country of origin declared for this imported product." : "Country of origin is missing for this imported product.",
+      status: found ? "correct" : "issue",
+      confidence: found ? 90 : 40,
+    });
+  }
+
+    // MRP sticker-tampering detection
+  const tampering = extracted.mrp_tampering || {};
+  const tamperingDetected = tampering.sticker_overlay_detected === true;
+  const tamperingStatus: Verdict = tamperingDetected
+    ? (tampering.confidence === "high" ? "issue" : "warn")
+    : "correct";
+
+  checklist.push({
+    id: nanoid(8),
+    label: "MRP tampering check",
+    detail: tamperingDetected
+      ? `Possible sticker overlay detected on MRP (${tampering.confidence} confidence). ${tampering.notes || ""}`.trim()
+      : "No visual evidence of a pasted-over MRP sticker was found.",
+    status: tamperingStatus,
+    confidence: tamperingDetected ? (tampering.confidence === "high" ? 75 : 55) : 85,
   });
 
   const correctItems = checklist.filter((c) => c.status === "correct").map((c) => c.label);
   const incorrectItems = checklist.filter((c) => c.status === "issue").map((c) => c.label);
-  const warnings = checklist.filter((c) => c.status === "warn").map((c) => c.label);
 
-  let overallStatus: Verdict = "correct";
-  if (incorrectItems.length > 0) overallStatus = "issue";
-  else if (warnings.length > 0) overallStatus = "warn";
+  
+
+  const overallStatus: Verdict = result.status === "COMPLIANT" ? "correct" : "issue";
 
   const confidence = Math.round(
     checklist.reduce((sum, c) => sum + c.confidence, 0) / checklist.length
   );
 
   return {
-    scanId: nanoid(12),
-    product,
+    scanId: String(result.id),
+    product: extracted.commodity_name?.value || "Packaged Commodity",
     overallStatus,
     correctItems,
     incorrectItems,
-    warnings,
+    warnings: violationMessages, // surface the exact rule-citation violation text here too
     checklist,
     confidence,
     createdAt: new Date().toISOString(),
