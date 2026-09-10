@@ -1,4 +1,5 @@
-# ScanVerify
+# TrueTag
+
 
 AI-powered product scanning and verification platform. Upload or capture a
 photo of a physical product, get an AI-style analysis of what's correct,
