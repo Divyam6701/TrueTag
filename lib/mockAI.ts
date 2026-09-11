@@ -24,8 +24,16 @@ const FIELD_DEFINITIONS: Array<{
 export async function analyzeProduct(input: string | Buffer): Promise<ScanResult> {
   const buffer = typeof input === "string" ? Buffer.from(input) : input;
 
-  const formData = new FormData();
-  formData.append("file", new Blob([buffer]), "scan.jpg");
+ const formData = new FormData();
+
+const arrayBuffer = new ArrayBuffer(buffer.byteLength);
+new Uint8Array(arrayBuffer).set(buffer);
+
+formData.append(
+  "file",
+  new Blob([arrayBuffer], { type: "image/jpeg" }),
+  "scan.jpg"
+);;
 
   const response = await fetch(`${BACKEND_URL}/api/scan`, {
     method: "POST",
