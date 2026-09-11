@@ -111,7 +111,7 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      {/* SCROLL STORY */}
+      {/* zoom STORY */}
       <section id="how-it-works">
         < ZoomStory />
       </section>
