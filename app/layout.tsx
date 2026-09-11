@@ -18,7 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ScanVerify — Scan. Verify. Know.",
+  title: "TrueTag — Scan. Verify. Know.",
   description:
     "AI-powered visual analysis to instantly verify products, identify issues, and generate an official report.",
 };

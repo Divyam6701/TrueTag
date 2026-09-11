@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, ScanLine, ShieldCheck, FileCheck2 } from "lucide-react";
-import { ScrollStory } from "@/components/ScrollStory";
+import { ZoomStory } from "@/components/ZoomStory";
 import { ProductRig } from "@/components/ProductRig";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -30,7 +30,7 @@ export default function WelcomePage() {
         <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-6">
           <div className="flex items-center gap-2">
             <ScanLine size={18} className="text-signal" />
-            <span className="font-medium tracking-tight">ScanVerify</span>
+            <span className="font-medium tracking-tight">TrueTag</span>
           </div>
           <nav className="flex items-center gap-3 text-sm">
             <Link href="/login" className="text-muted hover:text-paper transition-colors px-3 py-2">
@@ -107,13 +107,13 @@ export default function WelcomePage() {
         </div>
 
         <div className="relative z-10 flex justify-center pb-8 text-muted text-xs tracking-wide">
-          Scroll to see how it works
+           see how it works below
         </div>
       </section>
 
       {/* SCROLL STORY */}
       <section id="how-it-works">
-        <ScrollStory />
+        < ZoomStory />
       </section>
 
       {/* TRUST STRIP */}
@@ -159,7 +159,7 @@ export default function WelcomePage() {
       </section>
 
       <footer className="px-6 md:px-10 py-8 text-center text-muted text-xs border-t border-line">
-        ScanVerify — AI product scanning &amp; verification.
+        TrueTag — AI product scanning &amp; verification.
       </footer>
     </main>
   );

@@ -41,7 +41,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="scanverify-report-${scan.id}.pdf"`,
+      "Content-Disposition": `attachment; filename="TrueTag-report-${scan.id}.pdf"`,
       "Cache-Control": "private, no-store",
     },
   });

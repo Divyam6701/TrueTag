@@ -56,7 +56,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       >
         <Link href="/" className="flex items-center gap-2 mb-10 justify-center">
           <ScanLine size={18} className="text-signal" />
-          <span className="font-medium tracking-tight">ScanVerify</span>
+          <span className="font-medium tracking-tight">TrueTag</span>
         </Link>
 
         <div className="bg-surface border border-line rounded-2xl p-7 shadow-card">

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.create({
     data: {
       name: "Guest",
-      email: `guest-${suffix}@scanverify.local`,
+      email: `guest-${suffix}@TrueTag.local`,
       passwordHash,
       isGuest: true,
     },

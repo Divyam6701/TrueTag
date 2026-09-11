@@ -21,7 +21,7 @@ export function Nav() {
     <header className="hidden md:flex items-center justify-between px-8 py-5 border-b border-line bg-ink/80 backdrop-blur sticky top-0 z-30">
       <Link href="/dashboard" className="flex items-center gap-2">
         <ScanLine size={18} className="text-signal" />
-        <span className="font-medium tracking-tight">ScanVerify</span>
+        <span className="font-medium tracking-tight">TrueTag</span>
       </Link>
 
       <nav className="flex items-center gap-1 bg-surface border border-line rounded-full p-1">

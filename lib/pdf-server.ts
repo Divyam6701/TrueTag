@@ -86,7 +86,7 @@ export async function generateReportPdfBuffer(data: ReportData): Promise<Uint8Ar
   };
 
   // Header
-  page.drawText("SCANVERIFY", { x: margin, y, size: 12, font: fontBold, color: black });
+  page.drawText("TrueTag", { x: margin, y, size: 12, font: fontBold, color: black });
   page.drawText("AI Product Verification Platform", {
     x: margin,
     y: y - 14,

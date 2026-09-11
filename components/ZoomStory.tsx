@@ -21,7 +21,7 @@ const DATA_TAGS = [
   { x: "10%", y: "82%", label: "SEAL STATUS" },
 ];
 
-export function ScrollStory() {
+export function ZoomStory() {
   const trackRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: trackRef,

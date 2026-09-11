@@ -11,7 +11,7 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-const DEMO_EMAIL = "demo@scanverify.local";
+const DEMO_EMAIL = "demo@TrueTag.local";
 const DEMO_PASSWORD = "password123";
 
 const SAMPLE_SCANS = [
