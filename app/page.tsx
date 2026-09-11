@@ -113,7 +113,7 @@ export default function WelcomePage() {
 
       {/* zoom STORY */}
       <section id="how-it-works">
-        < ScrollStory />
+        <ScrollStory />
       </section>
 
       {/* TRUST STRIP */}
