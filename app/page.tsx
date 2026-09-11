@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, ScanLine, ShieldCheck, FileCheck2 } from "lucide-react";
-import { ZoomStory } from "@/components/ZoomStory";
+import { ScrollStory } from "@/components/ScrollStory";
 import { ProductRig } from "@/components/ProductRig";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -113,7 +113,7 @@ export default function WelcomePage() {
 
       {/* zoom STORY */}
       <section id="how-it-works">
-        < ZoomStory />
+        < ScrollStory />
       </section>
 
       {/* TRUST STRIP */}
